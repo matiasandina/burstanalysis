@@ -1,0 +1,70 @@
+
+```{r libraries}
+# this might be a package or introduced to fed3 R package at some point
+source("logisi_pasq_method.R")
+library(tidyverse, warn.conflicts = F)
+```
+
+```{r}
+df <- read_csv("pooled_FED_data.csv")
+
+lag_df <-
+df %>% 
+  group_by(experiment, FED) %>% 
+  mutate(ipi = datetime - lag(datetime))
+
+quantiles <- quantile(lag_df$ipi, na.rm = T, probs = c(0,50,75,90, 95, 99, 99.5)/100)
+print(quantiles)
+# use 99% quantile
+max_lag_sec <- quantile(lag_df$ipi, na.rm = T, probs = 0.99) %>% as.numeric()
+
+lag_df <-
+  lag_df %>% 
+  filter(complete.cases(ipi) & ipi < max_lag_sec) %>% 
+  select(experiment, FED, datetime, ipi, cum_pellets)
+```
+
+```{r}
+qq <-
+df %>% 
+  group_by(experiment, FED) %>% 
+  mutate(exp_mins = as.numeric(difftime(datetime, first(datetime), units = "min"))) %>%
+  select(experiment, FED, datetime, exp_mins) %>% 
+  group_split()
+
+```
+
+```{r}
+li <- map(seq(0.5, 2, by=0.1),
+      function(tt)
+      logisi_pasq_method(qq[[1]]$exp_mins, tt))
+
+sapply(li, nrow)
+
+```
+
+```{r}
+ggplot(qq[[1]], 
+       aes(exp_mins, y=1)) +
+  geom_point(pch="|", size = 2)
+```
+
+```{r}
+detected_bursts <-
+li[[4]] %>% 
+  as_tibble() %>% 
+  mutate(beg_mins=map_dbl(beg,function(.x) qq[[1]]$exp_mins[.x]), 
+         end_mins = map_dbl(end,function(.x) qq[[1]]$exp_mins[.x]))
+
+detected_bursts
+qq[[1]][4:11,] %>% pull(exp_mins) %>% diff %>% mean
+```
+
+```{r}
+ggplot(qq[[1]], 
+       aes(exp_mins, y=1)) +
+  geom_point(pch="|", size = 10) +
+  geom_segment(data = detected_bursts, 
+               aes(x=beg_mins, xend=end_mins, y=1, yend=1), color="red")+
+  ggforce::facet_zoom(xlim = c(1800, 2000))
+```

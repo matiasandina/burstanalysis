@@ -1,0 +1,55 @@
+Burst detection
+
+Trying to make sense of the different methods posted in
+
+github.com/ellesec/burstanalysis
+
+This guy was trying to reproduce the thing and had a hard time too...
+
+<https://github.com/StefanoBuccelli/burst_detection>
+
+Of note, some of these functions are trying to use `fit.hsmm`, a function from a supposed `burstHSMM` package that cannot be found.
+
+A "copy" of the package can be found in this link <http://www2.stat.duke.edu/~st118/Software/burstHSMM/>, which has only one function!
+
+The function itself can be found in this link <http://www2.stat.duke.edu/~st118/Software/burstHSMM/R/burstHSMM.R>
+
+I added it to the repo because it makes no sense to have it separate. It's on `HSMM_method.R`
+
+```{r}
+library(tidyverse, warn.conflicts = F)
+
+# It's not clear what these files have...
+# the "spikes" slot has values, what are they? ISIs ?
+#spikes_filelist <- list.files(path = "../hiPSC_recordings",
+#                              pattern = "h5", full.names = T)
+#spike_list <- purrr::map(spikes_filelist, function(tt) rhdf5::h5read(tt, "spikes"))
+
+# Go for the simulated data
+load("../Simulation_results/sim_data.RData")
+sim.data$reg.bursting[[1]] %>% str
+```
+
+```{r}
+reg_bursts <- sim.data$reg.bursting
+ggplot() +
+  geom_point(aes(x=reg_bursts[[1]]$spks, y=1), pch="|", size=5)+
+  geom_segment(aes(x=reg_bursts[[1]]$burst.beg, 
+                   xend=reg_bursts[[1]]$burst.end,
+                   y=1, yend=1),
+               lwd=2,
+               color="red")+
+  xlim(c(0,20))
+
+
+```
+
+```{r}
+qq <- logisi.pasq.method(sim.data$reg.bursting[[1]]$spks) %>%   as_tibble() %>% 
+  mutate(beg_time = sim.data$reg.bursting[[1]]$spks[beg],
+         end_time = sim.data$reg.bursting[[1]]$spks[end])
+```
+
+```{r}
+foodwebr::foodweb(FUN="logisi_pasq_method")
+```
