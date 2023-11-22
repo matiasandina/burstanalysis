@@ -69,16 +69,16 @@ CMA.method<-function(spike.train, brs.incl=TRUE, min.val=3, plot=FALSE) {
 }
   
     
-    between.bursts<-function(burst1, burst2) {
-      if (burst2[1]<=burst1[1] & burst2[2]>=burst1[2]) {
-        burst<-c(min(burst1[1], burst2[1]), max(burst2[1], burst2[2]))
-      } else {
-        burst<-NA
-      }
-      burst
-    }
-    
-    #Add back in IBIs
+between.bursts<-function(burst1, burst2) {
+  if (burst2[1]<=burst1[1] & burst2[2]>=burst1[2]) {
+    burst<-c(min(burst1[1], burst2[1]), max(burst2[1], burst2[2]))
+  } else {
+    burst<-NA
+  }
+  burst
+}
+
+#Add back in IBIs
 
 find.bursts<-function(spike.train, xt){
 isi<-diff(spike.train)
